@@ -27,7 +27,7 @@ Resources:
     FillBucketLambda:
         Type: AWS::Serverless::Function
         Properties:
-            Name: !Sub '${AWS::StackName}-fill-bucket-lambda'
+            FunctionName: !Sub '${AWS::StackName}-fill-bucket-lambda'
             CodeUri: lambda/fill_bucket_lambda/
             Handler: fill_bucket_lambda.lambda_handler
             Policies:
