@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     Returns(dict):
         S3 Client response
     """
-    logger.info("Event: {}".format(event))
+    logger.info("Event: {}\nContext: {}".format(event, context))
 
     logger.info("Reading CSV file")
     csv_file = open(File.CSV_FILE, "r")
@@ -38,6 +38,14 @@ def lambda_handler(event, context):
     logger.info("S3 client response: {}".format(s3_response))
 
     logger.info("Sending response to CFN")
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+    response = {}
+    response["Data"] = 120
+    cfnresponse.send(
+        event,
+        context,
+        cfnresponse.SUCCESS,
+        response,
+        "CustomResourcePhysicalID",
+    )
 
     return s3_response
