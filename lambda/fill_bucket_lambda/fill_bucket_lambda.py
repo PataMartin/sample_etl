@@ -15,6 +15,9 @@ def lambda_handler(event, context):
     Args:
         - event(Event):
         - context(context):
+
+    Returns(dict):
+        S3 Client response
     """
     logger.info("Reading CSV file")
     csv_file = open(File.CSV_FILE, "r")
@@ -28,3 +31,4 @@ def lambda_handler(event, context):
     )
 
     logger.info("S3 client response: {}".format(s3_response))
+    return s3_response
