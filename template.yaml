@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "ETL Training - Athena"
+
+Parameters:
+    S3Name:
+        Type: 'String'
+        Default: 'minfante-etl-training'
+
+Globals:
+    Function:
+        Timeout: 30
+        Runtime: python3.8
+        Environment:
+            Variables:
+                DATA_PREFIX: "data"
+                DATA_FILE_NAME: "raw_data.csv"
+
+Resources:
+################# S3 BUCKET ######################
+    S3Bucket:
+        Type: AWS::S3::Bucket
+        DeletionPolicy: Delete 
+        Properties:
+            BucketName: !Ref S3Name
+
+    FillBucketLambda:
+        Type: AWS::Serverless::Function
+        Properties:
+            CodeUri: lambda/fill_bucket_lambda/
+            Handler: fill_bucket_lambda.lambda_handler
+            Policies:
+                - Version: '2012-10-17'
+                  Statement:
+                      - Effect: Allow
+                        Action:
+                            - 's3:*'
+                        Resource: !GetAtt S3Bucket.Arn
+            Environment:
+                Variables:
+                    BUCKET_NAME: !Ref S3Bucket
+                    BUCKET_ARN: !GetAtt S3Bucket.Arn
+            Events:
+                S3CreationEvent:
+                    Type: CloudWatchEvent
+                    Properties:
+                        Pattern:
+                            detail:
+                                eventName:
+                                    - 'CreateBucket'
+                                requestParameters:
+                                    bucketName:
+                                        - !Ref S3Bucket
+                                state:
+                                    - 'terminated'
