@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     csv_file.close()
 
     logger.info("Uploading data file to bucket {}".format(bucket.BUCKET_NAME))
-    key = "{}/{}".format(bucket.DATA_FILE_NAME, bucket.DATA_FILE_NAME)
+    key = "{}/{}".format(bucket.DATA_PREFIX, bucket.DATA_FILE_NAME)
     s3_response = s3.put_object(
         Bucket=bucket.BUCKET_NAME, Key=key, Body=csv_file_content
     )
