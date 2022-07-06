@@ -36,6 +36,13 @@ Resources:
                         Action:
                             - 's3:*'
                         Resource: !GetAtt S3Bucket.Arn
+                - Version: '2012-10-17'
+                  Statement:
+                      - Effect: Allow
+                        Action:
+                            - 'cloudwatch:*'
+                            - 'logs:*'
+                        Resource: '*'
             Environment:
                 Variables:
                     BUCKET_NAME: !Ref S3Bucket
