@@ -24,7 +24,7 @@ def lambda_handler(event, context):
     logger.info("Uploading data file to bucket {}".format(bucket.BUCKET_NAME))
     key = "{}/{}".format(bucket.DATA_FILE_NAME, bucket.DATA_FILE_NAME)
     s3_response = s3.put_object(
-        bucket=Bucket.BUCKET_NAME, Key=key, Body=csv_file_content
+        Bucket=bucket.BUCKET_NAME, Key=key, Body=csv_file_content
     )
 
     logger.info("S3 client response: {}".format(s3_response))
