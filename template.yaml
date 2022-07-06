@@ -48,16 +48,8 @@ Resources:
                 Variables:
                     BUCKET_NAME: !Ref S3Bucket
                     BUCKET_ARN: !GetAtt S3Bucket.Arn
-            Events:
-                S3CreationEvent:
-                    Type: CloudWatchEvent
-                    Properties:
-                        Pattern:
-                            detail:
-                                eventName:
-                                    - 'CreateBucket'
-                                requestParameters:
-                                    bucketName:
-                                        - !Ref S3Bucket
-                                state:
-                                    - 'terminated'
+
+    FillBucketInvoker:
+        Type: AWS::CloudFormation::CustomResource
+        Properties:
+            ServiceToken: !GetAtt FillBucketLambda.Arn

@@ -1,6 +1,8 @@
 from consts import Bucket, File
 
 import boto3
+import cfnresponse
+
 from aws_lambda_powertools import Logger
 
 bucket = Bucket()
@@ -10,7 +12,8 @@ logger = Logger(service="FILL_BUCKET_SERVICE")
 
 def lambda_handler(event, context):
     """
-    This lambda function copy data to the data bucket on bucket creation
+    This lambda function copy data to the data bucket on bucket creation.
+    This lambda is invoked on deployment by a cfn custom resource
 
     Args:
         - event(Event):
@@ -19,6 +22,8 @@ def lambda_handler(event, context):
     Returns(dict):
         S3 Client response
     """
+    logger.info("Event: {}".format(event))
+
     logger.info("Reading CSV file")
     csv_file = open(File.CSV_FILE, "r")
     csv_file_content = csv_file.read()
@@ -31,4 +36,8 @@ def lambda_handler(event, context):
     )
 
     logger.info("S3 client response: {}".format(s3_response))
+
+    logger.info("Sending response to CFN")
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+
     return s3_response
