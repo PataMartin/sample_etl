@@ -1,7 +1,6 @@
 from consts import Bucket, File
 
 import boto3
-import cfnresponse
 
 from aws_lambda_powertools import Logger
 
@@ -13,7 +12,6 @@ logger = Logger(service="FILL_BUCKET_SERVICE")
 def lambda_handler(event, context):
     """
     This lambda function copy data to the data bucket on bucket creation.
-    This lambda is invoked on deployment by a cfn custom resource
 
     Args:
         - event(Event):
@@ -38,24 +36,8 @@ def lambda_handler(event, context):
 
         logger.info("S3 client response: {}".format(s3_response))
 
-        logger.info("Sending response to CFN")
-        response = {}
-        response["Data"] = 120
-        cfnresponse.send(
-            event,
-            context,
-            cfnresponse.SUCCESS,
-            response,
-        )
     except Exception as e:
-        logger.error("Sending ERROR response to CFN: {}".format(e))
-        response = {}
-        response["Data"] = 120
-        cfnresponse.send(
-            event,
-            context,
-            cfnresponse.ERROR,
-            response,
-        )
+        logger.error("ERROR: {}".format(e))
+        return {"error_msg": str(e)}
 
     return s3_response

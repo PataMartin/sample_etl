@@ -17,6 +17,16 @@ Globals:
                 DATA_FILE_NAME: "raw_data.csv"
 
 Resources:
+################# Lamba Layers ###################
+    CommonsLayer:
+        Type: AWS::Serverless::LayerVersion
+        Properties:
+            LayerName: common-layer
+            Description: "Common modules"
+            RetentionPolicy: Delete
+            CompatibleRuntimes:
+                - python3.8
+            ContentUri: ./lambda-layer/
 ################# S3 BUCKET ######################
     S3Bucket:
         Type: AWS::S3::Bucket
@@ -30,6 +40,8 @@ Resources:
             FunctionName: !Sub '${AWS::StackName}-fill-bucket-lambda'
             CodeUri: lambda/fill_bucket_lambda/
             Handler: fill_bucket_lambda.lambda_handler
+            Layers:
+                - !Ref CommonsLayer
             Policies:
                 - Version: '2012-10-17'
                   Statement:
@@ -48,8 +60,3 @@ Resources:
                 Variables:
                     BUCKET_NAME: !Ref S3Bucket
                     BUCKET_ARN: !GetAtt S3Bucket.Arn
-
-    FillBucketInvoker:
-        Type: AWS::CloudFormation::CustomResource
-        Properties:
-            ServiceToken: !GetAtt FillBucketLambda.Arn

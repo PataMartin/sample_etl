@@ -1,2 +1,1 @@
 aws_lambda_powertools
-cfn-response
