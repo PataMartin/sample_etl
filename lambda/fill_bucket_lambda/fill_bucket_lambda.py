@@ -31,21 +31,31 @@ def lambda_handler(event, context):
 
     logger.info("Uploading data file to bucket {}".format(bucket.BUCKET_NAME))
     key = "{}/{}".format(bucket.DATA_PREFIX, bucket.DATA_FILE_NAME)
-    s3_response = s3.put_object(
-        Bucket=bucket.BUCKET_NAME, Key=key, Body=csv_file_content
-    )
+    try:
+        s3_response = s3.put_object(
+            Bucket=bucket.BUCKET_NAME, Key=key, Body=csv_file_content
+        )
 
-    logger.info("S3 client response: {}".format(s3_response))
+        logger.info("S3 client response: {}".format(s3_response))
 
-    logger.info("Sending response to CFN")
-    response = {}
-    response["Data"] = 120
-    cfnresponse.send(
-        event,
-        context,
-        cfnresponse.SUCCESS,
-        response,
-        "CustomResourcePhysicalID",
-    )
+        logger.info("Sending response to CFN")
+        response = {}
+        response["Data"] = 120
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.SUCCESS,
+            response,
+        )
+    except Exception as e:
+        logger.error("Sending ERROR response to CFN: {}".format(e))
+        response = {}
+        response["Data"] = 120
+        cfnresponse.send(
+            event,
+            context,
+            cfnresponse.ERROR,
+            response,
+        )
 
     return s3_response
