@@ -1,3 +1,5 @@
 aws_lambda_powertools
 cerberus
 pandas
+fsspec
+s3fs

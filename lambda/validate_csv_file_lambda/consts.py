@@ -9,4 +9,4 @@ class Service:
         Init consts based on env variables
         """
         self.SCHEMA = os.environ.get("SCHEMA")
-        self.PROCESSING_FOLDER = os.environ.get("PROCESSING_FOLDER")
+        self.PROCESSING_PREFIX = os.environ.get("PROCESSING_PREFIX")

@@ -8,6 +8,7 @@ Parameters:
         Default: 'minfante-etl-training'
     Schema:
         Type: 'String'
+        Default: "{\"Date\":{\"type\": \"datetime\", \"format\": \"%m/%d/%Y\" },\"Description\":{\"type\": \"string\"},\"Deposits\":{\"type\": \"float\"},\"Withdrawls\":{\"type\": \"float\"}    ,\"Balance\":{\"type\": \"float\"}}"
 
 Globals:
     Function:
@@ -17,6 +18,7 @@ Globals:
             Variables:
                 DATA_PREFIX: "data"
                 DATA_FILE_NAME: "raw_data.csv"
+                PROCESSING_PREFIX: "processing"
 
 Resources:
 ################# Lamba Layers ###################
@@ -68,7 +70,8 @@ Resources:
         Properties:
             Name: !Sub '${AWS::StackName}-etl-pipeline'
             DefinitionUri: step-function/etl-pipeline.json
-            #DefinitionSubstitutions:
+            DefinitionSubstitutions:
+                ValidateCsvFileLambdaArn: !GetAtt ValidateCsvFileLambda.Arn
             Role: !GetAtt EtlPipelineRole.Arn
     EtlPipelineRole:
         Type: AWS::IAM::Role
@@ -87,6 +90,10 @@ Resources:
                   PolicyDocument:
                       Version: "2012-10-17"
                       Statement:
+                        - Effect: Allow
+                          Action:
+                              - lambda:InvokeFunction
+                          Resource: !GetAtt ValidateCsvFileLambda.Arn
                         - Effect: Allow
                           Action:
                               - logs:GetLogEvents
@@ -134,3 +141,86 @@ Resources:
                                 Rules:
                                     - Name: prefix
                                       Value: "data"
+################ Functions ####################
+    ValidateCsvFileLambda:
+        Type: AWS::Serverless::Function
+        Properties:
+            FunctionName: !Sub '${AWS::StackName}-validate-csv-file'
+            CodeUri: lambda/validate_csv_file_lambda
+            Handler: validate_csv_file_lambda.lambda_handler
+            Environment:
+                Variables:
+                    SCHEMA: !Ref Schema
+            Layers:
+                - !Ref CommonsLayer
+            Policies:
+                - Version: '2012-10-17'
+                  Statement:
+                      - Effect: Allow
+                        Action:
+                            - 's3:*'
+                        Resource: !Sub "arn:aws:s3:::${S3Name}*"
+                      - Effect: Allow
+                        Action:
+                            - 'cloudwatch:*'
+                            - 'logs:*'
+                        Resource: '*'
+################ Glue ####################
+    GlueDb:
+        Type: AWS::Glue::Database
+        Properties:
+            CatalogId: !Ref AWS::StackName
+            DatabaseInput:
+                Description: !Sub "Glue Database of stack ${AWS::StackName}"
+    RawFileCrawler:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Role: !Ref GlueRole
+            Description: "Crawler to generate the schema of the raw file"
+            SchemaChangePolicy:
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DELETE_FROM_DATABASE"
+            DatabaseName: !Ref GlueDb
+            Targets:
+                S3Targets:
+                    - Path: !Sub "s3://${S3Name}/processing"
+            Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+    GlueRole:
+          Type: AWS::IAM::Role
+          Properties:
+              AssumeRolePolicyDocument:
+                  Version: "2012-10-17"
+                  Statement:
+                      -
+                          Effect: "Allow"
+                          Principal:
+                          Service:
+                              - "glue.amazonaws.com"
+                          Action:
+                              - "sts:AssumeRole"
+              Policies:
+                  -
+                      PolicyName: "root"
+                      PolicyDocument:
+                          Version: "2012-10-17"
+                          Statement:
+                      - 
+                        Sid: "s3access"
+                        Effect: "Allow"
+                        Action:
+                              - "s3:*"
+                          Resource: !Sub "arn:aws:s3:::${S3Name}*"
+                      -
+                        Sid: "glue"
+                        Effect: "Allow"
+                        Action: "glue:*"
+                        Resource: 
+                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/${GlueDB}"
+                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/${GlueDB}/*"
+                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
+                      -
+                        Sid: "cwlog"
+                        Effect: "Allow"
+                        Action: "logs:*"
+                        Resource:
+                              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/*"

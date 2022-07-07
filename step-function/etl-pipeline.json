@@ -1,9 +1,10 @@
 {
     "Comment": "ETL Pipeline",
-    "StartAt": "Pass",
+    "StartAt": "ValidateCsvFile",
     "States": {
-        "Pass": {
-            "Type": "Pass",
+        "ValidateCsvFile": {
+            "Type": "Task",
+            "Resource": "${ValidateCsvFileLambdaArn}",
             "End": true
         }
     }
