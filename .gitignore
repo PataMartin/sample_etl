@@ -1,4 +1,6 @@
 *.swp
-*__pycache/
+*__pycache__/
 *venv/
 *aws-sam
+lambda-layer/
+samconfig.toml

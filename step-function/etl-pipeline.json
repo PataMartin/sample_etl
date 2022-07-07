@@ -1,0 +1,10 @@
+{
+    "Comment": "ETL Pipeline",
+    "StartAt": "Pass",
+    "States": {
+        "Pass": {
+            "Type": "Pass",
+            "End": true
+        }
+    }
+}
