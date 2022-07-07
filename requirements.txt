@@ -1,1 +1,3 @@
 aws_lambda_powertools
+cerberus
+pandas

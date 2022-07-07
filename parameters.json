@@ -1,0 +1,8 @@
+[
+    {
+        "S3Name": "minfante-etl-training"
+    },
+    {
+        "Schema": "{\"Date\":{\"type\": \"datetime\", \"format\": \"%m/%d/%Y\" },\"Description\":{\"type\": \"string\"},\"Deposits\":{\"type\": \"float\"},\"Withdrawls\":{\"type\": \"float\"},\"Balance\":{\"type\": \"float\"}}"
+    }
+]

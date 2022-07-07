@@ -6,6 +6,8 @@ Parameters:
     S3Name:
         Type: 'String'
         Default: 'minfante-etl-training'
+    Schema:
+        Type: 'String'
 
 Globals:
     Function:
@@ -66,31 +68,56 @@ Resources:
         Properties:
             Name: !Sub '${AWS::StackName}-etl-pipeline'
             DefinitionUri: step-function/etl-pipeline.json
-            DefinitionSubstitutions:
+            #DefinitionSubstitutions:
+            Role: !GetAtt EtlPipelineRole.Arn
+    EtlPipelineRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - !Sub states.${AWS::Region}.amazonaws.com
+                      Action:
+                          - 'sts:AssumeRole'
             Policies:
+                - PolicyName: !Sub '${AWS::StackName}-etl-pipeline-policy'
+                  PolicyDocument:
+                      Version: "2012-10-17"
+                      Statement:
+                        - Effect: Allow
+                          Action:
+                              - logs:GetLogEvents
+                              - logs:PutLogEvents
+                              - logs:CreateLogStream
+                              - logs:DescribeLogStreams
+                              - logs:PutRetentionPolicy
+                              - logs:CreateLogGroup
+                          Resource: "*"
     TriggerPipelineLambda:
         Type: AWS::Serverless::Function
         Properties:
             FunctionName: !Sub '${AWS::StackName}-trigger-pipeline'
             CodeUri: lambda/trigger_pipeline_lambda/
             Handler: trigger_pipeline_lambda.lambda_handler
+            Environment:
+                Variables:
+                    STATE_MACHINE_ARN: !GetAtt EtlPipeline.Arn
             Layers:
                 - !Ref CommonsLayer
             Policies:
                 - Version: '2012-10-17'
                   Statement:
                       - Effect: Allow
-                        Actions:
+                        Action:
                             - 's3:*'
-                        Resource: "arn:aws:s3:::${S3Name}*"
-                - Version: '2012-10-17'
-                  Statement:
+                        Resource: !Sub "arn:aws:s3:::${S3Name}*"
                       - Effect: Allow
-                        Actions:
-                            - "states:StartExecution"
+                        Action:
+                            - 'states:StartExecution'
                         Resource: !GetAtt EtlPipeline.Arn
-                - Version: '2012-10-17'
-                  Statement:
                       - Effect: Allow
                         Action:
                             - 'cloudwatch:*'
@@ -99,11 +126,11 @@ Resources:
             Events:
                 ObjectCreatedEvent:
                     Type: S3
-                    Events: s3:ObjectCreated:*
-                    Filter:
-                        S3Key:
-                            Rules:
-                                - Name: prefix
-                                  Value: "data"
                     Properties:
                         Bucket: !Ref S3Bucket
+                        Events: s3:ObjectCreated:*
+                        Filter:
+                            S3Key:
+                                Rules:
+                                    - Name: prefix
+                                      Value: "data"
