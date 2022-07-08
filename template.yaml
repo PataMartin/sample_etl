@@ -72,6 +72,7 @@ Resources:
             DefinitionUri: step-function/etl-pipeline.json
             DefinitionSubstitutions:
                 ValidateCsvFileLambdaArn: !GetAtt ValidateCsvFileLambda.Arn
+                RawCrawlerName: !Ref RawFileCrawler
             Role: !GetAtt EtlPipelineRole.Arn
     EtlPipelineRole:
         Type: AWS::IAM::Role
@@ -94,6 +95,11 @@ Resources:
                           Action:
                               - lambda:InvokeFunction
                           Resource: !GetAtt ValidateCsvFileLambda.Arn
+                        - Effect: Allow
+                          Action:
+                              - glue:*
+                          Resource:
+                              - "*"
                         - Effect: Allow
                           Action:
                               - logs:GetLogEvents
@@ -169,7 +175,7 @@ Resources:
     GlueDb:
         Type: AWS::Glue::Database
         Properties:
-            CatalogId: !Ref AWS::StackName
+            CatalogId: !Ref AWS::AccountId
             DatabaseInput:
                 Description: !Sub "Glue Database of stack ${AWS::StackName}"
     RawFileCrawler:
@@ -186,41 +192,38 @@ Resources:
                     - Path: !Sub "s3://${S3Name}/processing"
             Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
     GlueRole:
-          Type: AWS::IAM::Role
-          Properties:
-              AssumeRolePolicyDocument:
-                  Version: "2012-10-17"
-                  Statement:
-                      -
-                          Effect: "Allow"
-                          Principal:
-                          Service:
-                              - "glue.amazonaws.com"
-                          Action:
-                              - "sts:AssumeRole"
-              Policies:
-                  -
-                      PolicyName: "root"
-                      PolicyDocument:
-                          Version: "2012-10-17"
-                          Statement:
-                      - 
-                        Sid: "s3access"
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    -
                         Effect: "Allow"
+                        Principal:
+                            Service:
+                                - "glue.amazonaws.com"
                         Action:
-                              - "s3:*"
-                          Resource: !Sub "arn:aws:s3:::${S3Name}*"
-                      -
-                        Sid: "glue"
-                        Effect: "Allow"
-                        Action: "glue:*"
-                        Resource: 
-                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/${GlueDB}"
-                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/${GlueDB}/*"
-                          - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
-                      -
-                        Sid: "cwlog"
-                        Effect: "Allow"
-                        Action: "logs:*"
-                        Resource:
-                              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/*"
+                            - "sts:AssumeRole"
+            Policies:
+                -
+                    PolicyName: "root"
+                    PolicyDocument:
+                        Version: "2012-10-17"
+                        Statement:
+                            -
+                                Sid: "s3access"
+                                Effect: "Allow"
+                                Action:
+                                    - "s3:*"
+                                Resource: !Sub "arn:aws:s3:::${S3Name}*"
+                            -
+                                Sid: "glue"
+                                Effect: "Allow"
+                                Action: "glue:*"
+                                Resource: !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:*"
+                            -
+                                Sid: "cwlog"
+                                Effect: "Allow"
+                                Action: "logs:*"
+                                Resource:
+                                    - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/*"

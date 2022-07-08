@@ -5,6 +5,52 @@
         "ValidateCsvFile": {
             "Type": "Task",
             "Resource": "${ValidateCsvFileLambdaArn}",
+            "Next": "StartRawCrawler"
+        },
+        "StartRawCrawler": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+            "Parameters": {
+                "Name": "${RawCrawlerName}"
+            },
+            "ResultPath": "$.response.start_crawler",
+            "Next": "CheckRawCrawler"
+        },
+        "CheckRawCrawler": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+            "Parameters": {
+                "Name": "${RawCrawlerName}"
+            },
+            "ResultPath": "$.response.get_crawler",
+            "Next": "isCrawlerRunning"
+        },
+        "isCrawlerRunning": {
+            "Type": "Choice",
+            "Choices": [
+                {"Or": [
+                    {
+                        "Variable": "$.response.get_crawler.Crawler.State",
+                        "StringEquals": "RUNNING"
+                    },
+                    {
+                        "Variable": "$.response.get_crawler.Crawler.State",
+                        "StringEquals": "STOPPING"
+                    }
+
+                ],
+                "Next": "WaitForRawCrawlerToComplete"
+                }
+            ],
+            "Default": "EndState"
+        },
+        "WaitForRawCrawlerToComplete": {
+            "Type": "Wait",
+            "Seconds": 30,
+            "Next": "CheckRawCrawler"
+        },
+        "EndState": {
+            "Type": "Pass",
             "End": true
         }
     }
