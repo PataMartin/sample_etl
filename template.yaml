@@ -73,6 +73,11 @@ Resources:
             DefinitionSubstitutions:
                 ValidateCsvFileLambdaArn: !GetAtt ValidateCsvFileLambda.Arn
                 RawCrawlerName: !Ref RawFileCrawler
+                GlueJobName: !Ref GlueJob
+                GlueDbName: !Ref GlueDb
+                ProcessingFolder: processing
+                ProcessedFolder: processed
+                BucketName: !Ref S3Name
             Role: !GetAtt EtlPipelineRole.Arn
     EtlPipelineRole:
         Type: AWS::IAM::Role
@@ -191,6 +196,16 @@ Resources:
                 S3Targets:
                     - Path: !Sub "s3://${S3Name}/processing"
             Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+    GlueJob:
+        Type: AWS::Glue::Job
+        Properties:
+            Command:
+                Name: glueetl
+                ScriptLocation: !Sub "s3://${S3Name}/glue/gluejob.py"
+            ExecutionProperty:
+                MaxConcurrentRuns: 20
+            MaxRetries: 0
+            Role: !Ref GlueRole
     GlueRole:
         Type: "AWS::IAM::Role"
         Properties:
@@ -224,6 +239,7 @@ Resources:
                             -
                                 Sid: "cwlog"
                                 Effect: "Allow"
-                                Action: "logs:*"
-                                Resource:
-                                    - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/*"
+                                Action:
+                                    - "logs:*"
+                                    - "cloudwatch:*"
+                                Resource: "*"

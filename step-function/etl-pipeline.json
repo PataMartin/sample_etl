@@ -42,15 +42,26 @@
                 "Next": "WaitForRawCrawlerToComplete"
                 }
             ],
-            "Default": "EndState"
+            "Default": "RunGlueJobSync"
         },
         "WaitForRawCrawlerToComplete": {
             "Type": "Wait",
             "Seconds": 30,
             "Next": "CheckRawCrawler"
         },
-        "EndState": {
-            "Type": "Pass",
+        "RunGlueJobSync": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::glue:startJobRun.sync",
+            "Parameters": {
+                "JobName": "${GlueJobName}",
+                "Arguments": {
+                    "--JOB_NAME": "${GlueJobName}",
+                    "--GLUE_DB": "${GlueDbName}",
+                    "--PROCESSING_FOLDER": "${ProcessingFolder}",
+                    "--PROCESSED_FOLDER": "${ProcessedFolder}",
+                    "--BUCKET_NAME": "${BucketName}"
+                }
+            },
             "End": true
         }
     }
