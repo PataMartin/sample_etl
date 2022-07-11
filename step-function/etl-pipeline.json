@@ -62,6 +62,52 @@
                     "--BUCKET_NAME": "${BucketName}"
                 }
             },
+            "Next": "StartPartitionedCrawler"
+        },
+        "StartPartitionedCrawler": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+            "Parameters": {
+                "Name": "${PartitionedCrawlerName}"
+            },
+            "ResultPath": "$.response.start_crawler",
+            "Next": "CheckPartitionedCrawler"
+        },
+        "CheckPartitionedCrawler": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+            "Parameters": {
+                "Name": "${PartitionedCrawlerName}"
+            },
+            "ResultPath": "$.response.get_crawler",
+            "Next": "isPartitionedCrawlerRunning"
+        },
+        "isPartitionedCrawlerRunning": {
+            "Type": "Choice",
+            "Choices": [
+                {"Or": [
+                    {
+                        "Variable": "$.response.get_crawler.Crawler.State",
+                        "StringEquals": "RUNNING"
+                    },
+                    {
+                        "Variable": "$.response.get_crawler.Crawler.State",
+                        "StringEquals": "STOPPING"
+                    }
+
+                ],
+                "Next": "WaitForPartitionedCrawlerToComplete"
+                }
+            ],
+            "Default": "EndState"
+        },
+        "WaitForPartitionedCrawlerToComplete": {
+            "Type": "Wait",
+            "Seconds": 30,
+            "Next": "CheckPartitionedCrawler"
+        },
+        "EndState": {
+            "Type": "Pass",
             "End": true
         }
     }

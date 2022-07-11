@@ -73,6 +73,7 @@ Resources:
             DefinitionSubstitutions:
                 ValidateCsvFileLambdaArn: !GetAtt ValidateCsvFileLambda.Arn
                 RawCrawlerName: !Ref RawFileCrawler
+                PartitionedCrawlerName: !Ref PartitionedFileCrawler
                 GlueJobName: !Ref GlueJob
                 GlueDbName: !Ref GlueDb
                 ProcessingFolder: processing
@@ -196,6 +197,18 @@ Resources:
                 S3Targets:
                     - Path: !Sub "s3://${S3Name}/processing"
             Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+    PartitionedFileCrawler:
+        Type: "AWS::Glue::Crawler"
+        Properties:
+            Role: !Ref GlueRole
+            Description: "Crawler to generate the schema of the partitioned file"
+            SchemaChangePolicy:
+                UpdateBehavior: "UPDATE_IN_DATABASE"
+                DeleteBehavior: "DELETE_FROM_DATABASE"
+            DatabaseName: !Ref GlueDb
+            Targets:
+                S3Targets:
+                    - Path: !Sub "s3://${S3Name}/processed"
     GlueJob:
         Type: AWS::Glue::Job
         Properties:
