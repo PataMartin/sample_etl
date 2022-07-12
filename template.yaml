@@ -6,9 +6,24 @@ Parameters:
     S3Name:
         Type: 'String'
         Default: 'minfante-etl-training'
+    S3SagemakerBucketName:
+        Type: 'String'
+        Default: 'minfante-etl-smbucket'
     Schema:
         Type: 'String'
         Default: "{\"Date\":{\"type\": \"datetime\", \"format\": \"%m/%d/%Y\" },\"Description\":{\"type\": \"string\"},\"Deposits\":{\"type\": \"float\"},\"Withdrawls\":{\"type\": \"float\"}    ,\"Balance\":{\"type\": \"float\"}}"
+    NotebookInstanceName:
+        MaxLength: '63'
+        MinLength: '1'
+        Type: 'String'
+        Default: 'minfante-etl-smnotebook'
+    NotebookInstanceType:
+        AllowedValues:
+            - ml.t2.medium
+            - ml.m4.xlarge
+            - ml.p2.xlarge
+        Type: 'String'
+        Default: "ml.t2.medium"
 
 Globals:
     Function:
@@ -72,10 +87,10 @@ Resources:
             DefinitionUri: step-function/etl-pipeline.json
             DefinitionSubstitutions:
                 ValidateCsvFileLambdaArn: !GetAtt ValidateCsvFileLambda.Arn
-                RawCrawlerName: !Ref RawFileCrawler
                 PartitionedCrawlerName: !Ref PartitionedFileCrawler
                 GlueJobName: !Ref GlueJob
                 GlueDbName: !Ref GlueDb
+                RawCrawlerName: !Ref RawFileCrawler
                 ProcessingFolder: processing
                 ProcessedFolder: processed
                 BucketName: !Ref S3Name
@@ -256,3 +271,50 @@ Resources:
                                     - "logs:*"
                                     - "cloudwatch:*"
                                 Resource: "*"
+################ Sagemaker ####################
+    SagemakerNotebookInstance:
+        Type: "AWS::SageMaker::NotebookInstance"
+        Properties:
+            NotebookInstanceName: !Ref NotebookInstanceName
+            InstanceType: !Ref NotebookInstanceType
+            RoleArn: !GetAtt SageMakerRole.Arn
+    SagemakerBucket:
+        Type: "AWS::S3::Bucket"
+        DeletionPolicy: Delete
+        Properties:
+            BucketName: !Ref S3SagemakerBucketName
+    SageMakerRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: "Allow"
+                      Principal:
+                          Service:
+                              - "sagemaker.amazonaws.com"
+                      Action:
+                          - "sts:AssumeRole"
+            ManagedPolicyArns:
+                - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+            Path: "/service-role/"
+            Policies:
+                - PolicyName: !Sub "${AWS::StackName}-SMBucketAccess"
+                  PolicyDocument:
+                      Version: '2012-10-17'
+                      Statement:
+                          - Effect: "Allow"
+                            Action:
+                                - "s3:*"
+                            Resource: !Sub "arn:aws:s3:::${S3SagemakerBucketName}*"
+                          - Effect: "Allow"
+                            Action:
+                                - "s3:*"
+                            Resource: !Sub "arn:aws:s3:::${S3Name}*"
+                          - Effect: "Allow"
+                            Action:
+                                - "athena:*"
+                            Resource: "*"
+                          - Effect: "Allow"
+                            Action:
+                                - "glue:*"
+                            Resource: "*"
