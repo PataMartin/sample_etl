@@ -234,6 +234,22 @@ Resources:
                 MaxConcurrentRuns: 20
             MaxRetries: 0
             Role: !Ref GlueRole
+    GlueQaJob:
+        Type: AWS::Glue::Job
+        Properties:
+            Command:
+                Name: glueetl
+                ScriptLocation: !Sub "s3://${S3Name}/glue/glueqajob.py"
+            ExecutionProperty:
+                MaxConcurrentRuns: 1
+            MaxRetries: 0
+            Role: !Ref GlueRole
+            DefaultArguments:
+                - "--additional-python-modules": "great_expectations"
+                  "--JOB_NAME": !Ref GlueQaJob
+                  "--GLUE_DB": !Ref GlueDb
+                  "--GLUE_TABLE": "processed"
+                  "--BUCKET_NAME": !Ref S3Name
     GlueRole:
         Type: "AWS::IAM::Role"
         Properties:
