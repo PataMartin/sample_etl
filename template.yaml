@@ -287,50 +287,50 @@ Resources:
                                     - "logs:*"
                                     - "cloudwatch:*"
                                 Resource: "*"
-################ Sagemaker ####################
-    SagemakerNotebookInstance:
-        Type: "AWS::SageMaker::NotebookInstance"
-        Properties:
-            NotebookInstanceName: !Ref NotebookInstanceName
-            InstanceType: !Ref NotebookInstanceType
-            RoleArn: !GetAtt SageMakerRole.Arn
-    SagemakerBucket:
-        Type: "AWS::S3::Bucket"
-        DeletionPolicy: Delete
-        Properties:
-            BucketName: !Ref S3SagemakerBucketName
-    SageMakerRole:
-        Type: "AWS::IAM::Role"
-        Properties:
-            AssumeRolePolicyDocument:
-                Statement:
-                    - Effect: "Allow"
-                      Principal:
-                          Service:
-                              - "sagemaker.amazonaws.com"
-                      Action:
-                          - "sts:AssumeRole"
-            ManagedPolicyArns:
-                - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-            Path: "/service-role/"
-            Policies:
-                - PolicyName: !Sub "${AWS::StackName}-SMBucketAccess"
-                  PolicyDocument:
-                      Version: '2012-10-17'
-                      Statement:
-                          - Effect: "Allow"
-                            Action:
-                                - "s3:*"
-                            Resource: !Sub "arn:aws:s3:::${S3SagemakerBucketName}*"
-                          - Effect: "Allow"
-                            Action:
-                                - "s3:*"
-                            Resource: !Sub "arn:aws:s3:::${S3Name}*"
-                          - Effect: "Allow"
-                            Action:
-                                - "athena:*"
-                            Resource: "*"
-                          - Effect: "Allow"
-                            Action:
-                                - "glue:*"
-                            Resource: "*"
+################# Sagemaker ####################
+#    SagemakerNotebookInstance:
+#        Type: "AWS::SageMaker::NotebookInstance"
+#        Properties:
+#            NotebookInstanceName: !Ref NotebookInstanceName
+#            InstanceType: !Ref NotebookInstanceType
+#            RoleArn: !GetAtt SageMakerRole.Arn
+#    SagemakerBucket:
+#        Type: "AWS::S3::Bucket"
+#        DeletionPolicy: Delete
+#        Properties:
+#            BucketName: !Ref S3SagemakerBucketName
+#    SageMakerRole:
+#        Type: "AWS::IAM::Role"
+#        Properties:
+#            AssumeRolePolicyDocument:
+#                Statement:
+#                    - Effect: "Allow"
+#                      Principal:
+#                          Service:
+#                              - "sagemaker.amazonaws.com"
+#                      Action:
+#                          - "sts:AssumeRole"
+#            ManagedPolicyArns:
+#                - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+#            Path: "/service-role/"
+#            Policies:
+#                - PolicyName: !Sub "${AWS::StackName}-SMBucketAccess"
+#                  PolicyDocument:
+#                      Version: '2012-10-17'
+#                      Statement:
+#                          - Effect: "Allow"
+#                            Action:
+#                                - "s3:*"
+#                            Resource: !Sub "arn:aws:s3:::${S3SagemakerBucketName}*"
+#                          - Effect: "Allow"
+#                            Action:
+#                                - "s3:*"
+#                            Resource: !Sub "arn:aws:s3:::${S3Name}*"
+#                          - Effect: "Allow"
+#                            Action:
+#                                - "athena:*"
+#                            Resource: "*"
+#                          - Effect: "Allow"
+#                            Action:
+#                                - "glue:*"
+#                            Resource: "*"
